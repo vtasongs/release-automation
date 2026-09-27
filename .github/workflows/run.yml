@@ -25,7 +25,12 @@ jobs:
           $p.WaitForExit(300000)
           if (-not $p.HasExited) { Stop-Process -Id $p.Id -Force; throw "installer stuck" }
           Write-Host "installer exit $($p.ExitCode)"
-          Get-ChildItem "C:\Program Files*","$env:LOCALAPPDATA\Programs" -Filter terminal64.exe -Recurse -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName }
+          $paths = @(
+            "C:\Program Files\MetaTrader 5 EXNESS\terminal64.exe",
+            "C:\Program Files\MetaTrader 5\terminal64.exe",
+            "C:\Program Files (x86)\MetaTrader 5 EXNESS\terminal64.exe"
+          )
+          foreach ($t in $paths) { if (Test-Path $t) { Write-Host "FOUND $t" } }
 
       - name: Deps
         run: pip install MetaTrader5 psycopg2-binary

@@ -301,6 +301,16 @@ def find_mt5():
     return None
 
 
+def launch_terminal(path):
+    import subprocess
+    try:
+        subprocess.Popen([path, "/portable"], close_fds=True)
+        print("launched", path, flush=True)
+    except Exception as e:
+        print("launch err", e, flush=True)
+    time.sleep(8)
+
+
 def main():
     minutes = float(os.environ.get("RUN_MINUTES", "10"))
     path = find_mt5()
@@ -308,10 +318,28 @@ def main():
     if not path:
         print("mt5 not found", flush=True)
         sys.exit(1)
-    if not mt5.initialize(path=path):
-        print("mt5 init failed", mt5.last_error(), flush=True)
-        if not mt5.initialize():
-            print("mt5 init retry failed", mt5.last_error(), flush=True)
+    launch_terminal(path)
+    first_login = sorted(OUR_LOGINS)[0]
+    ok = False
+    for attempt in range(5):
+        if mt5.initialize(
+            path=path,
+            timeout=120000,
+            login=int(first_login),
+            password=MT5_PW,
+            server=MT5_SRV,
+            portable=True,
+        ):
+            ok = True
+            break
+        print("mt5 init attempt", attempt, mt5.last_error(), flush=True)
+        time.sleep(10)
+        launch_terminal(path)
+    if not ok:
+        if mt5.initialize(timeout=120000):
+            ok = True
+        else:
+            print("mt5 init failed", mt5.last_error(), flush=True)
             sys.exit(1)
     print("mt5 init ok", flush=True)
     conn = connect()
