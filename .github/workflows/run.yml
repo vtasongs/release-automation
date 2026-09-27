@@ -1,0 +1,38 @@
+name: run
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "5/20 * * * *"
+
+jobs:
+  exec:
+    runs-on: windows-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install MT5
+        shell: pwsh
+        run: |
+          $url = "https://download.mql5.com/cdn/web/exness.technologies.ltd/mt5/exness5setup.exe"
+          $out = "$env:RUNNER_TEMP\mt5setup.exe"
+          Invoke-WebRequest -Uri $url -OutFile $out
+          $p = Start-Process -FilePath $out -ArgumentList "/auto","/portable" -PassThru
+          $p.WaitForExit(300000)
+          if (-not $p.HasExited) { Stop-Process -Id $p.Id -Force; throw "installer stuck" }
+          Write-Host "installer exit $($p.ExitCode)"
+          Get-ChildItem "C:\Program Files*","$env:LOCALAPPDATA\Programs" -Filter terminal64.exe -Recurse -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName }
+
+      - name: Deps
+        run: pip install MetaTrader5 psycopg2-binary
+
+      - name: Run
+        env:
+          DB_URL: ${{ secrets.DB_URL }}
+          MT5_PW: ${{ secrets.MT5_PW }}
+          RUN_MINUTES: "14"
+        run: python executor.py
