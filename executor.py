@@ -301,8 +301,30 @@ def find_mt5():
     return None
 
 
+def enable_autotrading(path):
+    cfg_dir = os.path.join(os.path.dirname(path), "config")
+    try:
+        os.makedirs(cfg_dir, exist_ok=True)
+    except Exception:
+        pass
+    common = os.path.join(cfg_dir, "common.ini")
+    try:
+        with open(common, "a", encoding="utf-8") as f:
+            f.write("\n[Common]\nAllowLiveTrading=1\nAllowDllImport=1\n")
+    except Exception as e:
+        print("common.ini", e, flush=True)
+    terminal = os.path.join(cfg_dir, "terminal.ini")
+    try:
+        with open(terminal, "a", encoding="utf-8") as f:
+            f.write("\n[Experts]\nAllowLiveTrading=1\nAllowExport=1\n")
+    except Exception as e:
+        print("terminal.ini", e, flush=True)
+    print("autotrading config written", cfg_dir, flush=True)
+
+
 def launch_terminal(path):
     import subprocess
+    enable_autotrading(path)
     try:
         subprocess.Popen([path, "/portable"], close_fds=True)
         print("launched", path, flush=True)
