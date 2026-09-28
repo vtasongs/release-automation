@@ -307,30 +307,47 @@ def enable_autotrading(path):
         os.makedirs(cfg_dir, exist_ok=True)
     except Exception:
         pass
+    # common.ini
     common = os.path.join(cfg_dir, "common.ini")
     try:
-        with open(common, "a", encoding="utf-8") as f:
-            f.write("\n[Common]\nAllowLiveTrading=1\nAllowDllImport=1\n")
+        with open(common, "w", encoding="utf-8") as f:
+            f.write("[Common]\nAllowLiveTrading=1\nAllowDllImport=1\n")
     except Exception as e:
         print("common.ini", e, flush=True)
+    # terminal.ini
     terminal = os.path.join(cfg_dir, "terminal.ini")
     try:
-        with open(terminal, "a", encoding="utf-8") as f:
-            f.write("\n[Experts]\nAllowLiveTrading=1\nAllowExport=1\n")
+        with open(terminal, "w", encoding="utf-8") as f:
+            f.write("[Experts]\nAllowLiveTrading=1\nAllowExport=1\n")
     except Exception as e:
         print("terminal.ini", e, flush=True)
     print("autotrading config written", cfg_dir, flush=True)
 
 
+def kill_terminals():
+    import subprocess
+    try:
+        subprocess.run(["taskkill", "/F", "/IM", "terminal64.exe"], capture_output=True, timeout=10)
+    except Exception as e:
+        print("kill err", e, flush=True)
+
+
 def launch_terminal(path):
     import subprocess
+    kill_terminals()
     enable_autotrading(path)
+    time.sleep(2)
+    # Start with autotrading on flag if supported
     try:
-        subprocess.Popen([path, "/portable"], close_fds=True)
-        print("launched", path, flush=True)
-    except Exception as e:
-        print("launch err", e, flush=True)
-    time.sleep(8)
+        subprocess.Popen([path, "/portable", "/autotrading:on"], close_fds=True)
+        print("launched with /autotrading:on", path, flush=True)
+    except Exception:
+        try:
+            subprocess.Popen([path, "/portable"], close_fds=True)
+            print("launched /portable", path, flush=True)
+        except Exception as e:
+            print("launch err", e, flush=True)
+    time.sleep(10)
 
 
 def main():
