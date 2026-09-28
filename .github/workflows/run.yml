@@ -2,12 +2,12 @@ name: run
 on:
   workflow_dispatch:
   schedule:
-    - cron: "5/20 * * * *"
+    - cron: "5 */6 * * *"
 
 jobs:
   exec:
     runs-on: windows-latest
-    timeout-minutes: 18
+    timeout-minutes: 360
     steps:
       - uses: actions/checkout@v4
 
@@ -39,5 +39,5 @@ jobs:
         env:
           DB_URL: ${{ secrets.DB_URL }}
           MT5_PW: ${{ secrets.MT5_PW }}
-          RUN_MINUTES: "14"
+          RUN_MINUTES: "350"
         run: python executor.py
